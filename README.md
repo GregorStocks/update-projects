@@ -8,11 +8,11 @@ lein run project1 project2 project3 # assumes your username is gregor and you're
 
 ### Bugs
 
-      |
-      |
-     _|
-///\(o_o)/\\\
-|||  ` '  |||
+          |
+          |
+         _|
+    ///\(o_o)/\\\
+    |||  ` '  |||
 
 ## License
 
