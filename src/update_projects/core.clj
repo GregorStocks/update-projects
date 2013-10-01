@@ -4,10 +4,10 @@
 
 (defn- inc-version [version is-cut?]
   (let [inced (clojure.string/replace version #"\d+(?=-)" #(str (inc (Long/parseLong %))))
+        more-inced (clojure.string/replace inced #"\d+$" #(str (inc (Long/parseLong %)))) ;; if it's not a snapshot
         cut-adjusted (if is-cut?
-                       (clojure.string/replace inced #"-SNAPSHOT" "")
-                       (clojure.string/replace inced #"(?<=\d)$" "-SNAPSHOT"))]
-    (println "Duh" is-cut? inced cut-adjusted)
+                       (clojure.string/replace more-inced #"-SNAPSHOT" "")
+                       (clojure.string/replace more-inced #"(?<=\d)$" "-SNAPSHOT"))]
     cut-adjusted))
 
 (defn- update-deps [is-cut? versions project-path]
