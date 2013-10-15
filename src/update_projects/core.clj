@@ -2,21 +2,22 @@
   (:gen-class)
   (require [rewrite-clj.zip :as z]))
 
-(defn- inc-version [version is-cut?]
-  (let [inced (clojure.string/replace version #"\d+(?=-)" #(str (inc (Long/parseLong %))))
-        more-inced (clojure.string/replace inced #"\d+$" #(str (inc (Long/parseLong %)))) ;; if it's not a snapshot
-        cut-adjusted (if is-cut?
-                       (clojure.string/replace more-inced #"-SNAPSHOT" "")
-                       (clojure.string/replace more-inced #"(?<=\d)$" "-SNAPSHOT"))]
+(defn- inc-version [version release-type]
+  (let [stripped (clojure.string/replace version #"-[a-zA-Z0-9-]*SNAPSHOT" "")
+        inced (clojure.string/replace stripped #"\d+$" #(str (inc (Long/parseLong %))))
+        cut-adjusted (case release-type
+                       :freeze inced
+                       :snap (str inced "-SNAPSHOT")
+                       :branch (str inced "-BRANCH-" (rand-int 1000) "-SNAPSHOT"))]
     cut-adjusted))
 
-(defn- update-deps [is-cut? versions project-path]
+(defn- update-deps [release-type versions project-path]
   (dosync
    (let [filename (str "/Users/gregor/" project-path "/project.clj")
          data (z/of-file filename)
          project-name (-> (z/find-value data z/next 'defproject) z/right z/sexpr)
          version (-> (z/find-value data z/next 'defproject) (z/find-value :description) z/left)
-         version-inced (inc-version (z/sexpr version) is-cut?)
+         version-inced (inc-version (z/sexpr version) release-type)
          replaced (ref (z/edn (z/root (z/replace version version-inced))))]
      (doseq [[project version] @versions]
        (when-let [prj (z/find-value @replaced z/next (symbol project))]
@@ -29,9 +30,12 @@
   [& args]
   (let [versions (atom {})
         [arg1 & projects] args
-        is-cut? (= arg1 "cut")]
+        release-type (case arg1
+               "cut" :freeze
+               "freeze" :freeze
+               "branch" :branch
+               "snap" :snap
+               :snap)]
     (doseq [arg projects]
-      (update-deps is-cut? versions arg))
-    (when is-cut?
-      (println "Cutting non-snapshot versions!"))
+      (update-deps release-type versions arg))
     (println @versions)))
