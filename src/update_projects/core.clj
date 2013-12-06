@@ -13,7 +13,7 @@
 
 (defn- update-deps [release-type versions project-path]
   (dosync
-   (let [filename (str "/Users/gregor/" project-path "/project.clj")
+   (let [filename (str "/home/gregor/" project-path "/project.clj")
          data (z/of-file filename)
          project-name (-> (z/find-value data z/next 'defproject) z/right z/sexpr)
          version (-> (z/find-value data z/next 'defproject) (z/find-value :description) z/left)
